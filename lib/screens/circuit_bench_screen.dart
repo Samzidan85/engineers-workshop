@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:engineers_workshop/theme.dart';
+import 'package:engineers_workshop/progress.dart';
 import 'package:engineers_workshop/widgets/bench_surface.dart';
 import 'package:engineers_workshop/widgets/tool_tray.dart';
 import 'package:engineers_workshop/widgets/circuit_canvas.dart';
@@ -16,9 +17,45 @@ class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
   int _selectedTool = 0; // 0=select, 1=wire, 2=voltmeter, 3=ammeter
   String? _hoveredTool;
 
+  final ProgressTracker _progress = ProgressTracker();
+  bool _taskComplete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress.init().then((_) {
+      if (mounted) {
+        setState(() => _taskComplete =
+            _progress.isMissionCompleted('build_basic_circuit'));
+      }
+    });
+  }
+
   void _selectTool(int index) {
     setState(() => _selectedTool = index);
     HapticFeedback.lightImpact();
+  }
+
+  /// Fired by CircuitCanvas when the solver finds a valid, closed circuit.
+  void _onCircuitSolved() {
+    if (_taskComplete) return;
+    _taskComplete = true;
+    _progress.completeMission('build_basic_circuit');
+    _progress.earnBadge('first_circuit');
+    setState(() {});
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFF1A202C),
+          content: Text(
+            '💡 Circuit complete! +100 XP · Badge: First Circuit',
+            style: TextStyle(color: Colors.white),
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -37,7 +74,10 @@ class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: CircuitCanvas(selectedTool: _selectedTool),
+                  child: CircuitCanvas(
+                    selectedTool: _selectedTool,
+                    onCircuitSolved: _onCircuitSolved,
+                  ),
                 ),
               ),
               // Tool tray
@@ -124,10 +164,12 @@ class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(color: WorkshopColors.brassDark),
             ),
-            child: const Text(
-              'Task 1: Light the bulb',
+            child: Text(
+              _taskComplete ? 'Task 1: Complete ✓' : 'Task 1: Light the bulb',
               style: TextStyle(
-                color: WorkshopColors.brass,
+                color: _taskComplete
+                    ? WorkshopColors.meterTextGreen
+                    : WorkshopColors.brass,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

@@ -186,6 +186,8 @@ class Lamp extends Component {
   @override
   String get label => _label;
 
+  bool get on => _on;
+
   void updateState(double current) {
     _on = current.abs() >= nominalCurrent * 0.5;
   }

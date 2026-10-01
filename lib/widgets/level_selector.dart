@@ -4,6 +4,8 @@ import 'package:engineers_workshop/widgets/component_block.dart';
 import 'package:flutter/material.dart' show Color, TextStyle, TextAlign;
 
 class LevelSelector extends StatelessWidget {
+  static const _benchMetal = Color(0xFF6B7280);
+
   final int currentLevel;
   final ValueChanged<int> onLevelSelected;
 
@@ -13,7 +15,6 @@ class LevelSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     const woodDark = Color(0xFF3A2A1C);
     const woodBorder = Color(0xFF3A2A1C);
-    const benchMetal = Color(0xFF6B7280);
     const brass = Color(0xFFB8860B);
     const brassLight = Color(0xFFD4A017);
     const ironDark = Color(0xFF374151);
@@ -22,7 +23,7 @@ class LevelSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: benchMetal.withOpacity(0.6),
+        color: _benchMetal.withOpacity(0.6),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: woodBorder),
       ),
@@ -41,9 +42,9 @@ class LevelSelector extends StatelessWidget {
           const SizedBox(width: 8),
           _buildChip(1, 'Circuit Bench', currentLevel == 1, brass, brassLight, ironDark, ironText, Colors.white, false),
           const SizedBox(width: 6),
-          _buildChip(2, 'Motors', currentLevel == 2, brass, brassLight, ironDark, ironText, Colors.white, true),
+          _buildChip(2, 'Motors', currentLevel == 2, brass, brassLight, ironDark, ironText, Colors.white, false),
           const SizedBox(width: 6),
-          _buildChip(3, 'Engineering', currentLevel == 3, brass, brassLight, ironDark, ironText, Colors.white, true),
+          _buildChip(3, 'Engineering', currentLevel == 3, brass, brassLight, ironDark, ironText, Colors.white, false),
         ],
       ),
     );
@@ -62,7 +63,7 @@ class LevelSelector extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? brassColor : (locked ? benchMetal.withOpacity(0.4) : ironDarkColor),
+          color: isSelected ? brassColor : (locked ? _benchMetal.withOpacity(0.4) : ironDarkColor),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: isSelected ? brassLightColor : ironDarkColor,

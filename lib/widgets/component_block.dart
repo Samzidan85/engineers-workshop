@@ -26,6 +26,9 @@ class ComponentBlock extends StatefulWidget {
     required this.component,
   });
 
+  @override
+  State<ComponentBlock> createState() => _ComponentBlockState();
+
   String terminalIdP() => '${id}_p';
   String terminalIdN() => '${id}_n';
 
@@ -307,6 +310,13 @@ class ComponentBlock extends StatefulWidget {
         ),
       ),
     );
+  }
+}
+
+class _ComponentBlockState extends State<ComponentBlock> {
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
   }
 }
 

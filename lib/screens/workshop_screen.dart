@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:engineers_workshop/widgets/workshop_header.dart';
 import 'package:engineers_workshop/widgets/level_selector.dart';
 import 'package:engineers_workshop/screens/circuit_bench_screen.dart';
+import 'package:engineers_workshop/screens/motors_screen.dart';
+import 'package:engineers_workshop/screens/engineering_screen.dart';
 
 class WorkshopScreen extends StatefulWidget {
   const WorkshopScreen({super.key});
@@ -55,6 +57,10 @@ class _WorkshopScreenState extends State<WorkshopScreen> {
     switch (_currentLevel) {
       case 1:
         return const CircuitBenchScreen();
+      case 2:
+        return const MotorsScreen();
+      case 3:
+        return const EngineeringScreen();
       default:
         return const Center(
           child: Text(

@@ -29,8 +29,9 @@ class WirePreview extends StatelessWidget {
     } else {
       final endBlock = _findBlock(endTerminalId);
       if (endBlock == null) return const SizedBox.shrink();
-      endPos = _terminalPosition(endBlock, endTerminalId);
-      if (endPos == null) return const SizedBox.shrink();
+      final endPosValue = _terminalPosition(endBlock, endTerminalId);
+      if (endPosValue == null) return const SizedBox.shrink();
+      endPos = endPosValue;
     }
 
     final path = Path();

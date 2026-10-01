@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:engineers_workshop/progress.dart';
 import 'package:engineers_workshop/screens/workshop_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+  ProgressTracker().init();
   runApp(const EngineerWorkshopApp());
 }
 

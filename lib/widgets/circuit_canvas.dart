@@ -7,7 +7,12 @@ import 'package:engineers_workshop/widgets/meter_readout.dart';
 
 class CircuitCanvas extends StatefulWidget {
   final int selectedTool;
-  const CircuitCanvas({super.key, required this.selectedTool});
+  final VoidCallback? onCircuitSolved;
+  const CircuitCanvas({
+    super.key,
+    required this.selectedTool,
+    this.onCircuitSolved,
+  });
 
   @override
   State<CircuitCanvas> createState() => _CircuitCanvasState();
@@ -139,6 +144,9 @@ class _CircuitCanvasState extends State<CircuitCanvas> {
     final result = solve(_circuit);
     setState(() => _lastSolve = result);
     _updateLampStates();
+    if (result.success) {
+      widget.onCircuitSolved?.call();
+    }
   }
 
   void _updateLampStates() {
