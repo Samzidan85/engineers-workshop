@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:engineers_workshop/widgets/component_block.dart';
-import 'package:flutter/material.dart' show Color, TextStyle, TextAlign;
 
 class LevelSelector extends StatelessWidget {
   static const _benchMetal = Color(0xFF6B7280);
@@ -9,11 +7,14 @@ class LevelSelector extends StatelessWidget {
   final int currentLevel;
   final ValueChanged<int> onLevelSelected;
 
-  const LevelSelector({super.key, required this.currentLevel, required this.onLevelSelected});
+  const LevelSelector({
+    super.key,
+    required this.currentLevel,
+    required this.onLevelSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const woodDark = Color(0xFF3A2A1C);
     const woodBorder = Color(0xFF3A2A1C);
     const brass = Color(0xFFB8860B);
     const brassLight = Color(0xFFD4A017);
@@ -21,49 +22,53 @@ class LevelSelector extends StatelessWidget {
     const ironText = Color(0xFFA0AEC0);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: _benchMetal.withOpacity(0.6),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: woodBorder),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'LEVEL',
-            style: TextStyle(
-              color: ironText,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
+      // Scrollable so the chips never overflow on a narrow (portrait) screen.
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'LEVEL',
+              style: TextStyle(
+                color: ironText,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          _buildChip(1, 'Circuit Bench', currentLevel == 1, brass, brassLight, ironDark, ironText, Colors.white, false),
-          const SizedBox(width: 6),
-          _buildChip(2, 'Motors', currentLevel == 2, brass, brassLight, ironDark, ironText, Colors.white, false),
-          const SizedBox(width: 6),
-          _buildChip(3, 'Engineering', currentLevel == 3, brass, brassLight, ironDark, ironText, Colors.white, false),
-        ],
+            const SizedBox(width: 8),
+            _buildChip(1, 'Circuit Bench', currentLevel == 1, brass, brassLight, ironDark, ironText, Colors.white),
+            const SizedBox(width: 6),
+            _buildChip(2, 'Motors', currentLevel == 2, brass, brassLight, ironDark, ironText, Colors.white),
+            const SizedBox(width: 6),
+            _buildChip(3, 'Engineering', currentLevel == 3, brass, brassLight, ironDark, ironText, Colors.white),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildChip(int level, String label, bool active, Color brassColor, Color brassLightColor, Color ironDarkColor, Color ironTextColor, Color whiteColor, bool locked) {
+  Widget _buildChip(int level, String label, bool active, Color brassColor,
+      Color brassLightColor, Color ironDarkColor, Color ironTextColor, Color whiteColor) {
     final isSelected = active;
     return GestureDetector(
       onTap: () {
-        if (!locked) {
-          HapticFeedback.lightImpact();
-          onLevelSelected(level);
-        }
+        HapticFeedback.lightImpact();
+        onLevelSelected(level);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? brassColor : (locked ? _benchMetal.withOpacity(0.4) : ironDarkColor),
+          color: isSelected ? brassColor : ironDarkColor,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: isSelected ? brassLightColor : ironDarkColor,
@@ -104,14 +109,6 @@ class LevelSelector extends StatelessWidget {
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-            if (locked) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.lock,
-                size: 12,
-                color: ironTextColor,
-              ),
-            ],
           ],
         ),
       ),

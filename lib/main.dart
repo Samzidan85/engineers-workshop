@@ -5,7 +5,8 @@ import 'package:engineers_workshop/screens/workshop_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+  // Let the device decide: the bench is usable in both orientations.
+  SystemChrome.setPreferredOrientations(DeviceOrientation.values);
   ProgressTracker().init();
   runApp(const EngineerWorkshopApp());
 }

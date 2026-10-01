@@ -8,14 +8,36 @@ import 'package:engineers_workshop/widgets/meter_readout.dart';
 class CircuitCanvas extends StatefulWidget {
   final int selectedTool;
   final VoidCallback? onCircuitSolved;
+  final CircuitCanvasController controller;
   const CircuitCanvas({
     super.key,
     required this.selectedTool,
     this.onCircuitSolved,
+    required this.controller,
   });
 
   @override
   State<CircuitCanvas> createState() => _CircuitCanvasState();
+}
+
+/// Lets the parent (bench screen) drop components onto the canvas.
+class CircuitCanvasController {
+  _CircuitCanvasState? _state;
+  void _attach(_CircuitCanvasState s) => _state = s;
+  void _detach(_CircuitCanvasState s) {
+    if (identical(_state, s)) _state = null;
+  }
+
+  bool get isAttached => _state != null;
+
+  /// Place a new component of [type] at a sensible default spot.
+  void placeComponent(ComponentType type) => _state?._placeComponentAuto(type);
+
+  /// Remove everything from the bench.
+  void clear() => _state?._clearCircuit();
+
+  /// Number of components currently on the bench.
+  int get blockCount => _state?._blocks.length ?? 0;
 }
 
 class _CircuitCanvasState extends State<CircuitCanvas> {
@@ -34,6 +56,48 @@ class _CircuitCanvasState extends State<CircuitCanvas> {
 
   int _blockCounter = 0;
   SolveResult? _lastSolve;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller._attach(this);
+  }
+
+  @override
+  void dispose() {
+    widget.controller._detach(this);
+    super.dispose();
+  }
+
+  /// Place a component at the next free slot in a simple flow layout.
+  /// Layout runs left-to-right across the bench in rows, so a battery →
+  /// resistor → lamp sequence lands in a sensible order to wire up.
+  void _placeComponentAuto(ComponentType type) {
+    final box = context.size;
+    final w = box?.width ?? 360.0;
+    final h = box?.height ?? 240.0;
+
+    const padX = 90.0;
+    const padY = 70.0;
+    const stepX = 130.0;
+    const stepY = 110.0;
+
+    final cols = ((w - padX * 2) / stepX).floor().clamp(1, 8);
+    final idx = _blocks.length;
+    final col = idx % cols;
+    final row = (idx ~/ cols) % 3;
+
+    final x = padX + col * stepX;
+    final y = padY + row * stepY;
+
+    _addBlock(
+      type,
+      Offset(
+        x.clamp(padX, w - padX),
+        y.clamp(padY, h - padY),
+      ),
+    );
+  }
 
   void _addBlock(ComponentType type, Offset position) {
     final id = 'block_${++_blockCounter}';

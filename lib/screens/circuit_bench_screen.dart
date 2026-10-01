@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:engineers_workshop/theme.dart';
 import 'package:engineers_workshop/progress.dart';
 import 'package:engineers_workshop/widgets/bench_surface.dart';
+import 'package:engineers_workshop/widgets/component_block.dart';
 import 'package:engineers_workshop/widgets/tool_tray.dart';
 import 'package:engineers_workshop/widgets/circuit_canvas.dart';
 
@@ -14,11 +15,13 @@ class CircuitBenchScreen extends StatefulWidget {
 }
 
 class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
-  int _selectedTool = 0; // 0=select, 1=wire, 2=voltmeter, 3=ammeter
+  int _selectedTool = 0; // 0=move, 1=wire, 2=voltmeter, 3=ammeter
   String? _hoveredTool;
 
+  final CircuitCanvasController _canvas = CircuitCanvasController();
   final ProgressTracker _progress = ProgressTracker();
   bool _taskComplete = false;
+  int _blockCount = 0;
 
   @override
   void initState() {
@@ -34,6 +37,22 @@ class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
   void _selectTool(int index) {
     setState(() => _selectedTool = index);
     HapticFeedback.lightImpact();
+  }
+
+  void _placeComponent(String kind) {
+    final type = switch (kind) {
+      'battery' => ComponentType.battery,
+      'resistor' => ComponentType.resistor,
+      'lamp' => ComponentType.lamp,
+      _ => ComponentType.resistor,
+    };
+    _canvas.placeComponent(type);
+    setState(() => _blockCount = _canvas.blockCount);
+  }
+
+  void _clearBench() {
+    _canvas.clear();
+    setState(() => _blockCount = 0);
   }
 
   /// Fired by CircuitCanvas when the solver finds a valid, closed circuit.
@@ -62,40 +81,54 @@ class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Bench surface background
-        const BenchSurface(),
-        // Main content: circuit canvas + tools
+        const Positioned.fill(child: BenchSurface()),
         Positioned.fill(
           child: Column(
             children: [
-              // Instruction banner
               _buildInstructionBanner(),
-              // Circuit canvas (working area)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: CircuitCanvas(
-                    selectedTool: _selectedTool,
-                    onCircuitSolved: _onCircuitSolved,
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: WorkshopColors.woodBorder,
+                        width: 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CircuitCanvas(
+                              selectedTool: _selectedTool,
+                              controller: _canvas,
+                              onCircuitSolved: _onCircuitSolved,
+                            ),
+                          ),
+                          if (_blockCount == 0)
+                            const Positioned.fill(
+                              child: IgnorePointer(child: _EmptyBenchHint()),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              // Tool tray
               ToolTray(
                 selectedTool: _selectedTool,
                 hoveredTool: _hoveredTool,
                 onToolSelected: _selectTool,
                 onToolHover: (tool) => setState(() => _hoveredTool = tool),
+                onPlaceComponent: _placeComponent,
+                onClear: _clearBench,
               ),
             ],
           ),
-        ),
-        // Top bar: back button + task description
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: _buildTopBar(),
         ),
       ],
     );
@@ -103,76 +136,91 @@ class _CircuitBenchScreenState extends State<CircuitBenchScreen> {
 
   Widget _buildInstructionBanner() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: WorkshopColors.ironDark.withOpacity(0.85),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: WorkshopColors.brassDark, width: 1),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.lightbulb_outline, color: WorkshopColors.brass, size: 18),
-          SizedBox(width: 10),
+          Icon(
+            _taskComplete ? Icons.check_circle : Icons.lightbulb_outline,
+            color: _taskComplete
+                ? WorkshopColors.meterTextGreen
+                : WorkshopColors.brass,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Drag components from the tray onto the bench. Tap a terminal to start a wire, then tap another terminal to connect.',
-              style: TextStyle(
+              _blockCount == 0
+                  ? 'Task 1 — Light the bulb. Tap Battery, Resistor and Lamp below to place them, then pick the Wire tool and tap a + terminal followed by a − terminal.'
+                  : 'Wire the parts into a loop: battery + → lamp −, lamp + → resistor −, resistor + → battery −. The lamp lights when the loop closes.',
+              style: const TextStyle(
                 color: WorkshopColors.ironText,
-                fontSize: 13,
+                fontSize: 12,
                 height: 1.3,
               ),
             ),
           ),
+          if (_blockCount > 0) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: WorkshopColors.brass.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: WorkshopColors.brassDark),
+              ),
+              child: Text(
+                _taskComplete ? 'Complete ✓' : '$_blockCount parts',
+                style: TextStyle(
+                  color: _taskComplete
+                      ? WorkshopColors.meterTextGreen
+                      : WorkshopColors.brass,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _buildTopBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: WorkshopColors.woodDark.withOpacity(0.95),
-        border: Border(
-          bottom: BorderSide(color: WorkshopColors.woodBorder, width: 1),
-        ),
-      ),
-      child: Row(
+class _EmptyBenchHint extends StatelessWidget {
+  const _EmptyBenchHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back, color: Colors.white70),
-            tooltip: 'Back to workshop',
+          Icon(
+            Icons.construction,
+            size: 40,
+            color: Colors.white.withOpacity(0.25),
           ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'L1 · The Circuit Bench',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-              ),
+          const SizedBox(height: 10),
+          Text(
+            'Empty bench',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.45),
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: WorkshopColors.brass.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: WorkshopColors.brassDark),
-            ),
-            child: Text(
-              _taskComplete ? 'Task 1: Complete ✓' : 'Task 1: Light the bulb',
-              style: TextStyle(
-                color: _taskComplete
-                    ? WorkshopColors.meterTextGreen
-                    : WorkshopColors.brass,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            'Tap a component below to place it',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.3),
+              fontSize: 12,
             ),
           ),
         ],
